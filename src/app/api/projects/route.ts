@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     }
     const userId = session.user._id;
 
-    const { name, overview, status, timeline, githubLink, liveSite } = await req.json();
+    const { name, overview, status, timeline, githubLink, liveSite ,count } = await req.json();
 
     const newProject = await Project.create({
       name,
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       user: userId,
       githubLink,
       liveSite,
+      count
     });
 
     return NextResponse.json({ project: newProject }, { status: 201 });

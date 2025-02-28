@@ -8,12 +8,12 @@ import NavDashboard from "@/components/NavDashboard";
 type Todo = {
   _id: string;
   priority: "high" | "medium" | "low";
-  name: string;
   task: string;
   description: string;
   note: string;
   status: "active" | "rest" | "done";
   createdAt: string; // e.g. "2023-09-15"
+  user: string; // Added user field
   id?: string; // For fallback
 };
 
@@ -22,14 +22,12 @@ export default function TodosPage() {
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formNote, setFormNote] = useState("");
-  const [formStatus, setFormStatus] = useState<"active" | "rest" | "done">(
-    "active"
-  );
-  const [formPriority, setFormPriority] = useState<"high" | "medium" | "low">(
-    "low"
-  );
+  const [formStatus, setFormStatus] = useState<"active" | "rest" | "done">("active");
+  const [formPriority, setFormPriority] = useState<"high" | "medium" | "low">("low");
   const [modalTodo, setModalTodo] = useState<Todo | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Track which category is expanded
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -44,7 +42,10 @@ export default function TodosPage() {
         method: "DELETE",
       });
 
-      if (!res.ok) throw new Error("Failed to delete todo");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to delete todo");
+      }
 
       // Remove deleted todo from state
       setTodos((prev) => prev.filter((t) => t._id !== id));
@@ -56,19 +57,27 @@ export default function TodosPage() {
       toast.success("Todo deleted successfully!");
     } catch (error) {
       console.error(error);
-      toast.error("Error deleting todo.");
+      toast.error(error instanceof Error ? error.message : "Error deleting todo.");
     }
   }
 
   async function fetchTodosFromDB() {
+    setIsLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/todos/all");
-      if (!res.ok) throw new Error("Failed to fetch todos");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to fetch todos");
+      }
       const data = await res.json();
       setTodos(data.todos || []);
     } catch (error) {
       console.error(error);
-      toast.error("Error fetching todos.");
+      setError(error instanceof Error ? error.message : "Error fetching todos");
+      toast.error(error instanceof Error ? error.message : "Error fetching todos.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -94,13 +103,12 @@ export default function TodosPage() {
       });
 
       if (!res.ok) {
-        const errorMsg = await res.text();
-        console.error("Error:", errorMsg);
-        throw new Error("Failed to create todo.");
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to create todo.");
       }
 
       const data = await res.json();
-      setTodos([...todos, data.todo]);
+      setTodos([data.todo, ...todos]);
 
       // Reset form and close modal
       resetForm();
@@ -109,7 +117,7 @@ export default function TodosPage() {
       toast.success("Todo added successfully!");
     } catch (error) {
       console.error(error);
-      toast.error("Error creating todo.");
+      toast.error(error instanceof Error ? error.message : "Error creating todo.");
     }
   }
 
@@ -129,33 +137,58 @@ export default function TodosPage() {
     <div className="bg-black text-white min-h-screen flex flex-col relative">
       <NavDashboard />
       <main className="flex-grow px-5 md:px-40 py-5 w-full max-w-screen-xl mx-auto">
-        {/* Floating Add Button */}
-        
-
         <div className="w-full max-w-7xl flex items-center justify-between">
-          <h1 className="text-4xl  font-black mb-4">To-Do List</h1>
-        <button onClick={() => setShowAddModal(true)} className="bg-[#303030] text-white px-3 py-1 rounded-xl hover:bg-[#474747] transition">
-          <span className="text-xl">Add To-Do</span>
-        </button>
+          <h1 className="text-4xl font-black mb-4">To-Do List</h1>
+          <button onClick={() => setShowAddModal(true)} className="bg-[#303030] text-white px-3 py-1 rounded-xl hover:bg-[#474747] transition">
+            <span className="text-xl">Add To-Do</span>
+          </button>
         </div>
 
-        {/* Todo Lists */}
-        {["active", "rest", "done"].map((status) => (
-          <TodoListSection
-            key={status}
-            title={status.charAt(0).toUpperCase() + status.slice(1)}
-            status={status as "active" | "rest" | "done"}
-            todos={getTodosByStatus(status as "active" | "rest" | "done")}
-            expanded={expandedCategory === status}
-            onExpand={() =>
-              setExpandedCategory(expandedCategory === status ? null : status)
-            }
-            onView={(todo) => setModalTodo(todo)}
-            totalCount={
-              getTodosByStatus(status as "active" | "rest" | "done").length
-            }
-          />
-        ))}
+        {isLoading ? (
+          <div className="flex justify-center items-center h-48">
+            <p className="text-gray-400">Loading your todo list...</p>
+          </div>
+        ) : error ? (
+          <div className="flex justify-center items-center h-48">
+            <div className="text-red-400 text-center">
+              <p className="mb-2">{error}</p>
+              <button 
+                onClick={fetchTodosFromDB} 
+                className="bg-[#303030] text-white px-3 py-1 rounded-xl hover:bg-[#474747] transition"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        ) : todos.length === 0 ? (
+          <div className="flex flex-col justify-center items-center h-48">
+            <p className="text-gray-400 mb-4">You don't have any todos yet.</p>
+            <button 
+              onClick={() => setShowAddModal(true)} 
+              className="bg-[#303030] text-white px-3 py-1 rounded-xl hover:bg-[#474747] transition"
+            >
+              Create Your First Todo
+            </button>
+          </div>
+        ) : (
+          /* Todo Lists */
+          ["active", "rest", "done"].map((status) => (
+            <TodoListSection
+              key={status}
+              title={status.charAt(0).toUpperCase() + status.slice(1)}
+              status={status as "active" | "rest" | "done"}
+              todos={getTodosByStatus(status as "active" | "rest" | "done")}
+              expanded={expandedCategory === status}
+              onExpand={() =>
+                setExpandedCategory(expandedCategory === status ? null : status)
+              }
+              onView={(todo) => setModalTodo(todo)}
+              totalCount={
+                getTodosByStatus(status as "active" | "rest" | "done").length
+              }
+            />
+          ))
+        )}
       </main>
 
       {/* Todo View/Delete Modal */}
@@ -281,6 +314,7 @@ function formatDateTime(dateString: string) {
   return { formattedDate, formattedTime };
 }
 
+// The rest of the component remains the same
 function TodoListSection({
   title,
   status,

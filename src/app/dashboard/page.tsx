@@ -59,12 +59,20 @@ export default function DashboardPage() {
   }
 
   async function fetchRecentTodos() {
+    if (!session?.user) return; // ✅ Ensure session is available before fetching
+
     try {
-      const res = await fetch("/api/todos");
+      const res = await fetch(`/api/todos`);
       const data = await res.json();
+      console.log(data);
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fetch todos");
+      }
+
       setTodos(data.todos || []);
     } catch (err) {
       console.error(err);
+      toast.error("Error fetching todos.");
     }
   }
 
@@ -189,7 +197,7 @@ export default function DashboardPage() {
             </section>
 
             {/* Todos Overview */}
-            <section>
+            {/* <section>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold">Recent Todos</h3>
                 <Link href="/dashboard/todos">
@@ -198,7 +206,7 @@ export default function DashboardPage() {
                   </span>
                 </Link>
               </div>
-              {/* {todos.length > 0 ? (
+              {todos.length > 0 ? (
                 <ul className="bg-[#1F2129] rounded-md shadow p-4">
                   {todos
                     .filter((todo) => todo.priority === "high") // Only high-priority tasks
@@ -225,9 +233,9 @@ export default function DashboardPage() {
                 </ul>
               ) : (
                 <p className="text-gray-400">No recent todos.</p>
-              )} */}
+              )}
 
-              {todos.length > 0 ? (
+              {/* {todos.length > 0 ? (
                 <ul className="bg-[#1F2129] rounded-md shadow p-4">
                   {(() => {
                     const highPriorityTodos = todos.filter(
@@ -281,7 +289,55 @@ export default function DashboardPage() {
                 </ul>
               ) : (
                 <p className="text-gray-400">No recent todos.</p>
-              )}
+              )} */}
+            {/* </section> */}
+            <section>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">Your Recent Todos</h3>
+                <Link href="/dashboard/todos">
+                  <span className="cursor-pointer text-blue-400 hover:underline">
+                    View All Todos
+                  </span>
+                </Link>
+              </div>
+
+              {todos.length > 0 ? (
+  <ul className="bg-[#1F2129] rounded-md shadow p-4">
+    {todos.slice(0, 5).map((todo) => ( // 👈 Limit to 5 todos using slice(0, 5)
+      <li
+        key={todo._id}
+        className={`border-b capitalize border-gray-700 last:border-b-0 py-2 text-sm ${
+          todo.completed
+            ? "line-through text-gray-500"
+            : "text-gray-200"
+        }`}
+      >
+        <div className="flex justify-between capitalize">
+          <div>
+            {todo.task}{" "}
+            <div className="text-gray-500 text-sm">
+              Note: {todo.note}
+            </div>
+          </div>
+          <span
+            className={`font-bold ${
+              todo.priority === "high"
+                ? "text-red-500"
+                : todo.priority === "medium"
+                ? "text-yellow-500"
+                : "text-green-500"
+            }`}
+          >
+            {todo.priority}
+          </span>
+        </div>
+      </li>
+    ))}
+  </ul>
+) : (
+  <p className="text-gray-400">No recent todos.</p>
+)}
+
             </section>
 
             {/* Timeline Snippet */}

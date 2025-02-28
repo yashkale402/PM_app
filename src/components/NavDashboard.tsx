@@ -4,12 +4,16 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
 
 export default function NavDashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  const router = useRouter(); // Initialize useRouter();
+  const appHost =process.env.APP_HOST_LINK
   function handleLogout() {
-    signOut({ callbackUrl: "/" }); // Redirect to home after logout
+    signOut({ callbackUrl:  appHost }).then(() => {
+      router.push("/login"); // Redirect to home after logout
+    });
   }
 
   return (

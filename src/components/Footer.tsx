@@ -92,9 +92,9 @@ const Footer = () => {
         Get in Touch
       </h3>
       <ul className="mt-4 space-y-2 text-gray-600">
-        <li>Phone: +1 (234) 567-8901</li>
-        <li>Email: support@pm-app.com</li>
-        <li>Address: 123 PM App Lane, City, Country</li>
+        <li>Phone: +91 9209197082</li>
+        <li>Email: yash@pm.com</li>
+        <li>Address: Dr D Y Patil ACS College Campus</li>
       </ul>
 
       {/* Optional: Newsletter signup example */}

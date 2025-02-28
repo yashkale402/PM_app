@@ -16,7 +16,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
         {/* Brand / Logo */}
         <Link href="/" className="text-xl font-bold text-gray-800">
-          PM App
+          Project Store
         </Link>
 
         {/* Desktop Nav (hidden on mobile) */}

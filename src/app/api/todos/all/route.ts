@@ -4,11 +4,19 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { dbConnect } from "@/lib/dbConnect";
 import Todo from "@/models/Todo";
 
-// Fetch all todos
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await dbConnect();
-    const todos = await Todo.find().sort({ createdAt: -1 });
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user?._id) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const userId = session.user._id;
+
+    // Fetch only the todos that belong to the logged-in user
+    const todos = await Todo.find({ user: userId }).sort({ createdAt: -1 });
 
     return NextResponse.json({ todos }, { status: 200 });
   } catch (error: any) {

@@ -14,6 +14,7 @@ const ProjectSchema = new Schema(
     // NEW FIELDS
     githubLink: { type: String, default: "" },
     liveSite: { type: String, default: "" },
+    count: { type: Number, default: 0 }
     
   },
   { timestamps: true }

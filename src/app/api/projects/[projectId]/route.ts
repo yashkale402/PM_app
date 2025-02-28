@@ -37,6 +37,34 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 // }
 
 
+// export async function GET(
+//   req: NextRequest,
+//   { params }: { params: { projectId: string } }
+// ) {
+//   try {
+//     await dbConnect();
+
+//     const { projectId } = params; // ✅ Correct way to extract params
+
+//     if (!projectId) {
+//       return NextResponse.json(
+//         { error: "Project ID is required" },
+//         { status: 400 }
+//       );
+//     }
+
+//     const project = await Project.findById(projectId);
+//     if (!project) {
+//       return NextResponse.json({ error: "Project not found" }, { status: 404 });
+//     }
+
+//     // ✅ Publicly return project (No auth check)
+//     return NextResponse.json({ project }, { status: 200 });
+//   } catch (error: any) {
+//     return NextResponse.json({ error: error.message }, { status: 500 });
+//   }
+// }
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { projectId: string } }
@@ -44,7 +72,7 @@ export async function GET(
   try {
     await dbConnect();
 
-    const { projectId } = params; // ✅ Correct way to extract params
+    const { projectId } = params;
 
     if (!projectId) {
       return NextResponse.json(
@@ -53,17 +81,23 @@ export async function GET(
       );
     }
 
-    const project = await Project.findById(projectId);
+    // Find the project and increment the view count
+    const project = await Project.findByIdAndUpdate(
+      projectId,
+      { $inc: { count: 1 } }, // ✅ Increment the view count
+      { new: true } // ✅ Return the updated document
+    );
+
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    // ✅ Publicly return project (No auth check)
     return NextResponse.json({ project }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
 
 export async function PUT(
   req: NextRequest,
